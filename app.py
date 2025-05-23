@@ -15,11 +15,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# === Load TFLite Model ===
-interpreter = tf.lite.Interpreter(model_path="models/ronde_light.tflite")
-interpreter.allocate_tensors()
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+# === Load Keras H5 Model ===
+model = tf.keras.models.load_model("models/ronde_anget_light.h5")
 
 # === Load Labels ===
 with open("models/labelsronde.json", "r") as f:
@@ -37,10 +34,7 @@ def preprocess_image(image_file):
 async def predict(file: UploadFile = File(...)):
     img_array = preprocess_image(file.file)
 
-    interpreter.set_tensor(input_details[0]['index'], img_array)
-    interpreter.invoke()
-    output = interpreter.get_tensor(output_details[0]['index'])
-
+    output = model.predict(img_array)
     pred_idx = int(np.argmax(output))
     confidence = float(np.max(output)) * 100
     label_id = label_keys[pred_idx]
