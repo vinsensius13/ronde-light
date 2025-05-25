@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # === Load Keras H5 Model ===
-model = tf.keras.models.load_model("models/ronde_anget_light.h5")
+model = tf.keras.models.load_model("models/ronde_anget_lightweight.h5")
 
 # === Load Labels ===
 with open("models/labelsronde.json", "r") as f:
