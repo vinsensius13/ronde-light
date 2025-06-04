@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # === Load Keras H5 Model ===
-model = tf.keras.models.load_model("models/ronde_anget_lightweight.h5")
+model = tf.keras.models.load_model("models/bocchi_model_inference.h5")
 
 # === Load Labels ===
 with open("models/labelsronde.json", "r") as f:
@@ -43,5 +43,5 @@ async def predict(file: UploadFile = File(...)):
         "label": labels[label_id],
         "label_id": label_id,
         "confidence": round(confidence, 2),
-        "threshold_check": "✅ Sukses Yakin" if confidence >= 60 else "❓ Nggak yakin, Baka! Coba foto lagi!"
+        "threshold_check": "✅ Sukses Yakin" if confidence >= 70 else "❓ Nggak yakin, Baka! Coba foto lagi!"
     }
