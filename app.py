@@ -16,10 +16,10 @@ app.add_middleware(
 )
 
 # === Load Keras H5 Model ===
-model = tf.keras.models.load_model("models/bocchi_model_inference.h5")
+model = tf.keras.models.load_model("models/bocchichan_model_inference.h5")
 
 # === Load Labels ===
-with open("models/labelsronde.json", "r") as f:
+with open("models/labelsbocchi.json", "r") as f:
     labels = json.load(f)
 label_keys = list(labels.keys())
 
@@ -43,5 +43,5 @@ async def predict(file: UploadFile = File(...)):
         "label": labels[label_id],
         "label_id": label_id,
         "confidence": round(confidence, 2),
-        "threshold_check": "✅ Sukses Yakin" if confidence >= 70 else "❓ Nggak yakin, Baka! Coba foto lagi!"
+        "threshold_check": "✅ Yeay beneran sukses!" if confidence >= 60 else "❓ Nggak yakin, Baka! Coba ambil foto lagi!"
     }
