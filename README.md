@@ -1,126 +1,198 @@
-# 🌕 Ronde-TFLITE 🍡
+# Ronde-Keras API
 
-FastAPI-based image classification API for detecting traditional Ronde icons and labeling them using a Keras `.h5` model.
-
----
-
-## 🚀 Features
-
-* 🌟 Classify image of cultural objects (like Ronde sets)
-* 📁 Accepts `.jpg`, `.png` and other image formats via multipart upload
-* 🧠 Uses TensorFlow (Keras `.h5`) model for inference
-* 📦 Easy to deploy via Render, Docker, or locally
-* 🔓 CORS enabled (accepts requests from anywhere)
-* 🧪 Auto-generated interactive Swagger docs (`/docs`)
+A lightweight FastAPI-based image classification API for predicting cultural landmarks using a pre-trained Keras `.h5` model based on MobileNetV2. Built for fast inference and easy integration with mobile or web frontends.
 
 ---
 
-## 💠 Installation
+## 🚀 Project Overview
+
+This API takes an image input (JPG/PNG), preprocesses it, and returns the predicted label with confidence score based on a deep learning model trained for landmark recognition. The model identifies various historical and cultural landmarks, specifically tailored for Pulau Penyengat.
+
+---
+
+## 🎓 Technologies Used
+
+* **FastAPI**: A modern, high-performance web framework for building APIs with Python 3.6+.
+* **TensorFlow**: Used to load and run the pre-trained `.h5` Keras model (MobileNetV2).
+* **Pillow (PIL)**: Image processing and resizing.
+* **NumPy**: Efficient numerical operations on image arrays.
+* **Uvicorn**: ASGI server to run the FastAPI app.
+* **CORS Middleware**: Handles cross-origin resource sharing for client-server communication.
+
+---
+
+## 🔧 Project Structure
+
+```
+ronde-keras/
+├── models/
+│   ├── bocchichan_model_inference.h5
+│   └── labelsbocchi.json
+├── app.py
+├── requirements.txt
+├── Dockerfile
+├── README.md
+└── .venv/ (optional)
+```
+
+---
+
+## 🔄 How It Works
+
+### 1. Load Model & Labels
+
+```python
+model = tf.keras.models.load_model("models/bocchichan_model_inference.h5")
+with open("models/labelsbocchi.json", "r") as f:
+    labels = json.load(f)
+```
+
+### 2. Preprocess Uploaded Image
+
+```python
+def preprocess_image(image_file):
+    img = Image.open(image_file).resize((224, 224)).convert("RGB")
+    img_array = np.asarray(img).astype(np.float32) / 255.0
+    return np.expand_dims(img_array, axis=0)
+```
+
+### 3. Predict Endpoint
+
+```python
+@app.post("/predict/")
+async def predict(file: UploadFile = File(...)):
+    img_array = preprocess_image(file.file)
+    output = model.predict(img_array)
+    pred_idx = int(np.argmax(output))
+    confidence = float(np.max(output)) * 100
+    label_id = label_keys[pred_idx]
+    return {
+        "label": labels[label_id],
+        "label_id": label_id,
+        "confidence": round(confidence, 2),
+        "threshold_check": "✅ Yeay beneran sukses!" if confidence >= 60 else "❓ Nggak yakin, Baka! Coba ambil foto lagi!"
+    }
+```
+
+---
+
+## 🚫 CORS Middleware (Security)
+
+Allow all origins, methods, and headers to enable integration with any frontend (mobile/web).
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+---
+
+## 🔍 OpenAPI & Swagger UI
+
+Access your API documentation at:
+
+* Swagger UI: [`/docs`](https://ronde-light.onrender.com/docs)
+* OpenAPI JSON: [`/openapi.json`](https://ronde-light.onrender.com/openapi.json)
+
+---
+
+## 🚧 Deployment (Render)
+
+API is deployed on [Render](https://render.com) using the Docker method for easy scalability and fast performance.
+
+---
+
+## ✅ Example API Call (cURL)
 
 ```bash
-# Clone this repo
-git clone https://github.com/yourusername/ronde-tflite.git
-cd ronde-tflite
+curl -X 'POST' \
+  'https://ronde-light.onrender.com/predict/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@IMG_1228.JPG;type=image/jpeg'
+```
 
-# (Optional) Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+### Example Response
 
-# Install dependencies
+```json
+{
+  "label": "Makam Engku Putri",
+  "label_id": "2",
+  "confidence": 83.96,
+  "threshold_check": "✅ Yeay beneran sukses!"
+}
+```
+
+---
+
+## 🧭 Installation & Local Running
+
+### 1. Clone this repo
+
+```bash
+git clone https://github.com/yourusername/ronde-keras.git
+cd ronde-keras
+```
+
+### 2. Setup virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 🧠 Model Structure
-
-* `models/ronde_anget_light.h5` → Pretrained Keras model for classification
-* `models/labelsronde.json` → Label mapping, format:
-
-```json
-{
-  "0": "ronde-bulat-polos",
-  "1": "bukit-kursi-meriam"
-  // ...
-}
-```
-
----
-
-## 🚦 API Endpoint
-
-### `POST /predict/`
-
-Endpoint for predicting image label using uploaded image.
-
-#### 🔧 Request
-
-* **Content-Type:** `multipart/form-data`
-* **Field:** `file` (required) – image file (e.g. `.jpg`, `.png`)
-
-#### 📄 Example cURL
+### 4. Run the API locally
 
 ```bash
-curl -X POST "https://ronde-light.onrender.com/predict/" \
-  -H "accept: application/json" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@yourimage.jpg;type=image/jpeg"
+uvicorn app:app --reload
 ```
 
-#### ✅ Response
-
-```json
-{
-  "label": "bukit-kursi-meriam",
-  "label_id": "1",
-  "confidence": 35.53,
-  "threshold_check": "❓ Nggak yakin, Baka! Coba foto lagi!"
-}
-```
-
-#### ❗ Threshold
-
-* Confidence ≥ 60%: `"✅ Sukses Yakin"`
-* Confidence < 60%: `"❓ Nggak yakin, Baka!"`
+Visit [`http://localhost:8000/docs`](http://localhost:8000/docs) for Swagger UI.
 
 ---
 
-## 🐳 Docker (Optional)
+## 📄 Requirements
 
-Build & run the app using Docker.
-
-```bash
-docker build -t ronde-tflite .
-docker run -p 8000:8000 ronde-tflite
+```
+fastapi
+uvicorn
+tensorflow
+pillow
+python-multipart
 ```
 
 ---
 
-## 🌍 Access API Docs
+## 🛠️ Future Improvements
 
-* Swagger UI: `http://localhost:8000/docs`
-* ReDoc: `http://localhost:8000/redoc`
-
----
-
-## 🧬 Tech Stack
-
-* Python 3.10+
-* FastAPI
-* TensorFlow (Keras)
-* Pillow (image handling)
-* Uvicorn
+* Add support for TensorFlow Lite (.tflite) inference
+* Integrate token-based authentication
+* Limit CORS to trusted domains
+* Add exception handling for file input errors
+* Add confidence-based fallback suggestions
 
 ---
 
-## 💡 Notes
+## 👋 Contributing
 
-* This project is a cultural object image classifier, tailored for Indonesian traditional food context.
-* Model used is trained on custom dataset of various ronde components.
+Feel free to fork and PR your changes. Contributions for feature requests, bug fixes, and optimizations are welcome!
 
 ---
 
-## 🧙 Author & Team
+## 🌟 Acknowledgement
 
-Made by **Vinsen**, **Aichan**, and **Team Nuswapada**
-Style: FastAPI + Tsundere-powered feedback 😠
+Model by: vinsensius13 & Nuswapada team
+
+---
+
+
